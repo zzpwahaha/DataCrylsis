@@ -8,8 +8,9 @@ from pandas import DataFrame
 import IPython
 import textwrap
 import os
-from . import ExpFile as exp
 import inspect
+
+import ExpFile as exp
 
 #def what(obj, callingLocals=locals()):
 def what(obj):
@@ -438,3 +439,8 @@ def dblAsymErrString(val, err_L1, err_U1, err_L2, err_U2, precision=None):
     result = (r'$'+round_sig_str(val, precision) + '^{(' + round_sig_str(errNumU1, numU1) + ')('+round_sig_str(errNumU2, numU2)+')}' 
               + '_{(' + round_sig_str(errNumL1, numL1) + ')('+ round_sig_str(errNumL2, numL2) + ')}$')
     return result
+
+if __name__ == "__main__":
+    print("I am miscellaneous")
+if __name__=="Miscellaneous":
+    print("I am imported Miscellaneous")

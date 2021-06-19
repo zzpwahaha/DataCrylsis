@@ -3,7 +3,7 @@ import h5py as h5
 from colorama import Fore, Style
 from numpy import array as arr
 import numpy as np
-from . import Miscellaneous as misc
+import Miscellaneous as misc
 import datetime
 dataAddress = None
 currentVersion = 4
@@ -459,4 +459,7 @@ class ExpFile:
         return start_date, start_time, stop_date, stop_time
         #return "","","",""
 
-    
+if __name__ == "__main__":
+    print("I am expfile")
+if __name__=="ExpFile":
+    print("I am imported expfile")

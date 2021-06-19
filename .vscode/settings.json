@@ -1,0 +1,11 @@
+{
+    "python.pythonPath": "C:\\software\\Anaconda3\\python.exe",
+    // "python.linting.enabled": true,
+    // "python.linting.pylintEnabled": true,
+    // "terminal.integrated.env.windows": { 
+    //     "PYTHONPATH": "${workspaceFolder};"
+    // },
+    "python.envFile": "${workspaceFolder}/.vscode/.env",
+    // "python.linting.pylintArgs": ["--init-hook",
+    //     "import sys; sys.path.append('C:/Chimera/DataCrylsis/')"]
+}
