@@ -4,13 +4,13 @@ from pandas import DataFrame
 
 from Miscellaneous import getStats, round_sig, errString
 from FourierAnalysis import fft
-from matplotlib.pyplot import *
+# from matplotlib.pyplot import *
 from scipy.optimize import curve_fit as fit
 from fitters import linear, exponential_decay
 import ExpFile as exp
 # from .TimeTracker import TimeTracker
 import AnalysisHelpers as ah
-import MarksConstants as mc
+import PhysicsConstants as mc
 import copy
 import PictureWindow as pw
 

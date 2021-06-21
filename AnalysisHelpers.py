@@ -3,6 +3,7 @@ __version__ = "1.4"
 import csv
 import os # for linesep
 import pandas as pd
+import numpy as np
 from numpy import array as arr
 import h5py as h5
 from inspect import signature
@@ -11,29 +12,30 @@ import uncertainties.unumpy as unp
 from warnings import warn
 import matplotlib.pyplot as plt
 
+from scipy.optimize import curve_fit as fit
 import scipy.optimize as opt
 import scipy.special as special
 import scipy.interpolate as interp
 import warnings
 
-#from . import MatplotlibPlotters as mp
-from . import MarksConstants as mc
-from . import Miscellaneous as misc
-from .Miscellaneous import what
+from . import MatplotlibPlotters as mp
+import PhysicsConstants as mc
+import Miscellaneous as misc
+from Miscellaneous import what
 from copy import copy, deepcopy
-from .fitters import ( #cython_poissonian as poissonian, 
+from fitters import ( #cython_poissonian as poissonian, 
                       poissonian as poissonian,
                       FullBalisticMotExpansion, LargeBeamMotExpansion, exponential_saturation )
-from .fitters.Gaussian import double as double_gaussian, gaussian_2d, arb_2d_sum, bump
+from fitters.Gaussian import double as double_gaussian, gaussian_2d, arb_2d_sum, bump
 
-from . import MainAnalysis as ma
-from . import AtomThreshold
-from . import ThresholdOptions
-from . import ExpFile as exp
-from .ExpFile import ExpFile, dataAddress
+import MainAnalysis as ma
+import AtomThreshold
+import ThresholdOptions
+import ExpFile as exp
+from ExpFile import ExpFile, dataAddress
 # from .TimeTracker import TimeTracker
-from . import PictureWindow as pw
-from . import TransferAnalysisOptions as tao
+import PictureWindow as pw
+import TransferAnalysisOptions as tao
 
 
 import scipy.ndimage as ndimage
@@ -42,8 +44,6 @@ import scipy.ndimage.filters as filters
 from statsmodels.stats.proportion import proportion_confint as confidenceInterval
 
 import imageio
-import numpy as np
-from numpy import array as arr
 import matplotlib as mpl
 import matplotlib.cm
 from IPython.display import Image, HTML, display
@@ -181,7 +181,7 @@ def fitManyGaussianImage(im, numGauss, neighborhood_size=20, threshold=1, direct
     ypts = np.arange(len(im))
     X,Y = np.meshgrid(xpts,ypts)
     zpts = arb_2d_sum.f((X,Y), *guess).reshape(X.shape)
-    f, ax = subplots(1,5,figsize=(20,10))
+    f, ax = plt.subplots(1,5,figsize=(20,10))
     ax[0].imshow(im)
     ax[0].set_title('Orig')
     ax[1].imshow(zpts)
