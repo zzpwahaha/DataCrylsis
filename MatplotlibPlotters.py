@@ -1,6 +1,7 @@
 import time
 from pandas import DataFrame
 from numpy import array as arr
+import numpy as np
 from random import randint
 from matplotlib.pyplot import *
 import matplotlib.pyplot as plt
@@ -12,13 +13,13 @@ from matplotlib.patches import Ellipse
 import IPython
 import IPython.display as disp
 
-from . import MainAnalysis as ma
-from . import TransferAnalysis
-from . import Miscellaneous as misc
+import MainAnalysis as ma
+import TransferAnalysis
+import Miscellaneous as misc
 
-from .MainAnalysis import analyzeNiawgWave, standardAssemblyAnalysis, AnalyzeRearrangeMoves
-from .LoadingFunctions import loadDataRay, loadCompoundBasler, loadDetailedKey
-from .AnalysisHelpers import (processSingleImage, orderData,
+from MainAnalysis import analyzeNiawgWave, standardAssemblyAnalysis, AnalyzeRearrangeMoves
+# from .LoadingFunctions import loadDataRay, loadCompoundBasler, loadDetailedKey
+from AnalysisHelpers import (processSingleImage, orderData,
                               normalizeData, getBinData, fitDoubleGaussian,
                               guessGaussianPeaks, calculateAtomThreshold, getAvgPic, getEnsembleHits,
                               getEnsembleStatistics, processImageData,
@@ -872,7 +873,7 @@ def Transfer( fileNumber, anaylsisOpts, show=True, legendOption=None, fitModules
                                                     shape=shape, title='All Data'))
         tt.clock('After-Indv-Hists')
         for thresholdFig in thresholdFigs:
-            display(thresholdFig)
+            disp.display(thresholdFig)
     if timeit:
         tt.display()
     
@@ -889,7 +890,7 @@ def Transfer( fileNumber, anaylsisOpts, show=True, legendOption=None, fitModules
             disp.display(disp.Markdown(fitInfoString))
             if showFitDetails:
                 for f in getFitsDataFrame(fits, fitModules, avgFit):
-                    display(f)
+                    disp.display(f)
 
         exp.annotate(fileNumber,expFile_version)
     configName = exp.getConfiguration(fileNumber,expFile_version=expFile_version)
@@ -918,7 +919,7 @@ def Transfer( fileNumber, anaylsisOpts, show=True, legendOption=None, fitModules
         disp.display(disp.Markdown(fitInfoString))
     if fitModules[-1] is not None and showFitDetails:
             for f in getFitsDataFrame(fits, fitModules, avgFit):
-                display(f)
+                disp.display(f)
     
     if outputThresholds:
         thresholdList = np.flip(np.reshape([t.t for t in initThresholds], (10,10)),1)
@@ -1182,7 +1183,7 @@ def Population(fileNum, atomLocations, whichPic, picsPerRep, plotLoadingRate=Tru
             print( label,':', misc.errString(fitVal, err) )
         if showFitDetails:
             fits_df = getFitsDataFrame(fits, fitModules, avgFits, markersize=5)
-            display(fits_df)
+            disp.display(fits_df)
     return { 'Key': key, 'All_Populations': allPops, 'All_Populations_Error': allPopsErr, 'Pixel_Counts':locCounts, 
             'Atom_Images':atomImages, 'Thresholds':thresholds, 'Atom_Data':atomData, 'Raw_Data':rawData, 
             'Average_Population': avgPop, 'Average_Population_Error': avgPopErr }
