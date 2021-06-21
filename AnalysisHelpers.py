@@ -31,7 +31,7 @@ from . import AtomThreshold
 from . import ThresholdOptions
 from . import ExpFile as exp
 from .ExpFile import ExpFile, dataAddress
-from .TimeTracker import TimeTracker
+# from .TimeTracker import TimeTracker
 from . import PictureWindow as pw
 from . import TransferAnalysisOptions as tao
 
