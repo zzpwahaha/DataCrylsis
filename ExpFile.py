@@ -91,7 +91,7 @@ def getConfiguration(fid, expFile_version=currentVersion, useBaseA=True):
         return ''.join([char.decode('utf-8') for char in f_MI['Configuration']])
     
 #"J:\\Data repository\\New Data Repository"
-def setPath(day, month, year, repoAddress="\\\\jilafile.colorado.edu\\scratch\\regal\\common\\LabData\\Quantum Gas Assembly\\Data repository\\New Data Repository"):
+def setPath(day, month, year, repoAddress="\\\\jilafile.colorado.edu\\scratch\\regal\\common\\LabData\\NewRb\\CryoData"):
     """
     This function sets the location of where all of the data files are stored. It is occasionally called more
     than once in a notebook if the user needs to work past midnight.
