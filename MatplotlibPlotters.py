@@ -17,24 +17,57 @@ import MainAnalysis as ma
 import TransferAnalysis
 import Miscellaneous as misc
 
-from MainAnalysis import analyzeNiawgWave, standardAssemblyAnalysis, AnalyzeRearrangeMoves
+# from MainAnalysis import analyzeNiawgWave, standardAssemblyAnalysis, AnalyzeRearrangeMoves
 # from .LoadingFunctions import loadDataRay, loadCompoundBasler, loadDetailedKey
-from AnalysisHelpers import (processSingleImage, orderData,
-                              normalizeData, getBinData, fitDoubleGaussian,
-                              guessGaussianPeaks, calculateAtomThreshold, getAvgPic, getEnsembleHits,
-                              getEnsembleStatistics, processImageData,
-                              fitPictures, fitGaussianBeamWaist, integrateData, 
-                              computeMotNumber, getFitsDataFrame, genAvgDiscrepancyImage, getGridDims)
+# from AnalysisHelpers import (processSingleImage, orderData,
+#                               normalizeData, getBinData, fitDoubleGaussian,
+#                               guessGaussianPeaks, calculateAtomThreshold, getAvgPic, getEnsembleHits,
+#                               getEnsembleStatistics, processImageData,
+#                               fitPictures, fitGaussianBeamWaist, integrateData, 
+#                               computeMotNumber, getFitsDataFrame, genAvgDiscrepancyImage, getGridDims)
 
-from . import TransferAnalysisOptions as tao
-from . import ThresholdOptions as to
-from . import AnalysisHelpers as ah
-from . import MarksConstants as mc 
-from . import PopulationAnalysis as pa 
-from .TimeTracker import TimeTracker
-from .fitters import LargeBeamMotExpansion, exponential_saturation
-from .fitters.Gaussian import gaussian_2d, double as double_gaussian, bump
-from . import ExpFile as exp
+import TransferAnalysisOptions as tao
+import ThresholdOptions as to
+import AnalysisHelpers as ah
+import PhysicsConstants as mc 
+import PopulationAnalysis as pa 
+from TimeTracker import TimeTracker
+from fitters import LargeBeamMotExpansion, exponential_saturation
+from fitters.Gaussian import gaussian_2d, double as double_gaussian, bump
+import ExpFile as exp
+
+# stoled from https://stackoverflow.com/questions/57216993/define-aspect-ratio-when-using-twinx-in-new-version-of-matplotlib
+# this can gives you golden ratio of the axes box
+
+def GoldenRatio(fig,cbar = False,parasiticCbar = False,ratio=0.618034):
+    w, h = fig.get_size_inches()
+    t = fig.subplotpars.top
+    b = fig.subplotpars.bottom
+    l = fig.subplotpars.left
+    r = fig.subplotpars.right
+    axsy = h*(t-b)
+    axsx = w*(r-l)
+    l = (1-axsx*ratio/h)/2
+    if cbar:
+        if not parasiticCbar:
+            cax = fig.get_axes()[-1]
+            box = cax.get_position().get_points()#left bottom right top
+            box[0,1] = l
+            box[1,1] = 1-l
+            box[1] = box[1] - box[0]
+            cax.set_position(box.flatten())#left bottom width height
+            fig.subplots_adjust(bottom=l, top=1-l)
+        else:
+            fig.subplots_adjust(bottom=l, top=1-l)
+            ax = fig.get_axes()[0]
+            box = ax.get_position()
+            ax.set_position([box.x0, box.y0, box.height/ratio *h/w, box.height] )
+            cax = fig.get_axes()[-1]
+            box1 = cax.get_position()
+            cax.set_position([box1.x0 + 0.9*(box.height/ratio *h/w - (box.x1 - box.x0)), 
+                              box1.y0, box1.x1-box.x0, box.height] )
+    else:
+        fig.subplots_adjust(bottom=l, top=1-l)
 
 def addAxColorbar(fig, ax, im):
     cax = mpl_toolkits.axes_grid1.make_axes_locatable(ax).append_axes('right', size='5%', pad=0.05)
@@ -165,13 +198,13 @@ def imageTickedColorbar(f, im, ax, lim):
         
 def makeThresholdStatsImages(ax, thresholds, locs, shape, ims, lims, fig):
     thresholdList = [thresh.t for thresh in thresholds]
-    thresholdPic, lims[0][0], lims[0][1] = genAvgDiscrepancyImage(thresholdList, shape, locs)
+    thresholdPic, lims[0][0], lims[0][1] = ah.genAvgDiscrepancyImage(thresholdList, shape, locs)
     ims.append(ax[0].imshow(thresholdPic, cmap=cm.get_cmap('seismic_r'), vmin=lims[0][0], vmax=lims[0][1], origin='lower'))
     ax[0].set_title('Thresholds:' + str(misc.round_sig(np.mean(thresholdList))), fontsize=12)
     imageTickedColorbar(fig, ims[-1], ax[0], lims[0])
     
     fidList = [thresh.fidelity for thresh in thresholds]
-    thresholdFidPic, lims[1][0], lims[1][1] = genAvgDiscrepancyImage(fidList, shape, locs)
+    thresholdFidPic, lims[1][0], lims[1][1] = ah.genAvgDiscrepancyImage(fidList, shape, locs)
     ims.append(ax[1].imshow(thresholdFidPic, cmap=cm.get_cmap('seismic_r'), vmin=lims[1][0], vmax=lims[1][1], origin='lower'))
     ax[1].set_title('Threshold Fidelities:' + str(misc.round_sig(np.mean(fidList))), fontsize=12)
     imageTickedColorbar(fig, ims[-1], ax[1], lims[1])
@@ -183,13 +216,13 @@ def makeThresholdStatsImages(ax, thresholds, locs, shape, ims, lims, fig):
             imagePeakDiff.append(abs(g[1] - g[4]))
         else:
             imagePeakDiff.append(0)
-    peakDiffImage, lims[2][0], lims[2][1] = genAvgDiscrepancyImage(imagePeakDiff, shape, locs)
+    peakDiffImage, lims[2][0], lims[2][1] = ah.genAvgDiscrepancyImage(imagePeakDiff, shape, locs)
     ims.append(ax[2].imshow(peakDiffImage, cmap=cm.get_cmap('seismic_r'), vmin=lims[2][0], vmax=lims[2][1], origin='lower'))
     ax[2].set_title('Imaging-Signal:' + str(misc.round_sig(np.mean(imagePeakDiff))), fontsize=12)
     imageTickedColorbar(fig, ims[-1], ax[2], lims[2])
 
     residualList = [thresh.rmsResidual for thresh in thresholds]
-    residualImage, _, lims[3][1] = genAvgDiscrepancyImage(residualList, shape, locs)
+    residualImage, _, lims[3][1] = ah.genAvgDiscrepancyImage(residualList, shape, locs)
     lims[3][0] = 0
     ims.append(ax[3].imshow(residualImage, cmap=cm.get_cmap('inferno'), vmin=lims[3][0], vmax=lims[3][1], origin='lower'))
     ax[3].set_title('Fit Rms Residuals:' + str(misc.round_sig(np.mean(residualList))), fontsize=12)
@@ -253,7 +286,7 @@ def plotNiawg(fileIndicator, points=300, plotTogether=True, plotVolts=False):
     
     plots the first part of the niawg wave and the fourier transform of the total wave.
     """
-    t, c1, c2, fftc1, fftc2 = analyzeNiawgWave(fileIndicator, ftPts=points)
+    t, c1, c2, fftc1, fftc2 = ma.analyzeNiawgWave(fileIndicator, ftPts=points)
     if plotVolts:
         figure(figsize=(20,10))
         title('Niawg Output, first ' + str(points) + ' points.')
@@ -412,23 +445,24 @@ def singleImage(data, accumulations=1, loadType='andor', bg=arr([0]), title='Sin
                 manualAccumulation=False, maxColor=None, key=arr([])):
     # if integer or 1D array
     if type(data) == int or (type(data) == np.array and type(data[0]) == int):
-        if loadType == 'andor':
-            rawData, _, _, _ = loadHDF5(data)
-        elif loadType == 'scout':
-            rawData = loadCompoundBasler(data, 'scout')
-        elif loadType == 'ace':
-            rawData = loadCompoundBasler(data, 'ace')
-        elif loadType == 'dataray':
-            rawData = [[] for x in range(data)]
-            # assume user inputted an array of ints.
-            for dataNum in data:
-                rawData[keyInc][repInc] = loadDataRay(data)
-        else:
-            raise ValueError('Bad value for LoadType.')
+        raise ValueError('Bad value for LoadType.')
+        # if loadType == 'andor':
+        #     rawData, _, _, _ = loadHDF5(data)
+        # elif loadType == 'scout':
+        #     rawData = loadCompoundBasler(data, 'scout')
+        # elif loadType == 'ace':
+        #     rawData = loadCompoundBasler(data, 'ace')
+        # elif loadType == 'dataray':
+        #     rawData = [[] for x in range(data)]
+        #     # assume user inputted an array of ints.
+        #     for dataNum in data:
+        #         rawData[keyInc][repInc] = loadDataRay(data)
+        # else:
+        #     raise ValueError('Bad value for LoadType.')
     else:
         rawData = data
 
-    res = processSingleImage(rawData, bg, window, xMin, xMax, yMin, yMax, accumulations, zeroCorners, smartWindow, manualAccumulation)
+    res = ah.processSingleImage(rawData, bg, window, xMin, xMax, yMin, yMax, accumulations, zeroCorners, smartWindow, manualAccumulation)
     rawData, dataMinusBg, xPts, yPts = res
     if not bg == arr(0):
         if findMax:
@@ -742,7 +776,7 @@ def Transfer( fileNumber, anaylsisOpts, show=True, legendOption=None, fitModules
                 mainPlot.plot(fit['x'], fit['guess'], color='r', alpha=0.5)
     if fitModules[0] is not None and showFitCharacterPlot:
         f, ax = subplots()
-        fitCharacterPic, vmin, vmax = genAvgDiscrepancyImage(fitCharacters, avgPics[0].shape, analysisOpts.initLocs())
+        fitCharacterPic, vmin, vmax = ah.genAvgDiscrepancyImage(fitCharacters, avgPics[0].shape, analysisOpts.initLocs())
         im = ax.imshow(fitCharacterPic, cmap=cm.get_cmap('seismic_r'), vmin=vmin, vmax=vmax, origin='lower')
         ax.set_title('Fit-Character (white is average)')
         #ax.grid(False)
@@ -766,15 +800,15 @@ def Transfer( fileNumber, anaylsisOpts, show=True, legendOption=None, fitModules
                                              analysisOpts.tferLocs(), avgPics[0].shape, ims, lims[9:13], f_img)
 
                 avgTransfers = [np.mean(s) for s in transferData]
-                avgTransferPic, l20, l21 = genAvgDiscrepancyImage(avgTransfers, avgPics[0].shape, analysisOpts.initLocs())
+                avgTransferPic, l20, l21 = ah.genAvgDiscrepancyImage(avgTransfers, avgPics[0].shape, analysisOpts.initLocs())
 
                 avgPops = [np.mean(l) for l in initPopulation]
-                avgInitPopPic, l30, l31 = genAvgDiscrepancyImage(avgPops, avgPics[0].shape, analysisOpts.initLocs())
+                avgInitPopPic, l30, l31 = ah.genAvgDiscrepancyImage(avgPops, avgPics[0].shape, analysisOpts.initLocs())
                 
                 if genAvgs is not None:
                     print('genavgs',genAvgs)
                     genAtomAvgs = [np.mean(dp) for dp in genAvgs] if genAvgs[0] is not None else [0]
-                    genImage, _, l41 = genAvgDiscrepancyImage(genAtomAvgs, avgPics[0].shape, 
+                    genImage, _, l41 = ah.genAvgDiscrepancyImage(genAtomAvgs, avgPics[0].shape, 
                                                               analysisOpts.initLocs()) if genAvgs[0] is not None else (np.zeros(avgPics[0].shape), 0, 1)
                 else:
                     genImage, l41, genAtomAvgs = (np.zeros(avgInitPopPic.shape), 1, [0])
@@ -810,15 +844,15 @@ def Transfer( fileNumber, anaylsisOpts, show=True, legendOption=None, fitModules
                                          analysisOpts.tferLocs(), avgPics[0].shape, ims, lims[9:13], f_img)
 
             avgTransfers = [np.mean(s) for s in transferData]
-            avgTransferPic, l20, l21 = genAvgDiscrepancyImage(avgTransfers, avgPics[0].shape, analysisOpts.initLocs())
+            avgTransferPic, l20, l21 = ah.genAvgDiscrepancyImage(avgTransfers, avgPics[0].shape, analysisOpts.initLocs())
 
             avgPops = [np.mean(l) for l in initPopulation]
-            avgInitPopPic, l30, l31 = genAvgDiscrepancyImage(avgPops, avgPics[0].shape, analysisOpts.initLocs())
+            avgInitPopPic, l30, l31 = ah.genAvgDiscrepancyImage(avgPops, avgPics[0].shape, analysisOpts.initLocs())
 
             if genAvgs is not None:
                 print('genavgs',genAvgs)
                 genAtomAvgs = [np.mean(dp) for dp in genAvgs] if genAvgs[0] is not None else [0]
-                genImage, _, l41 = genAvgDiscrepancyImage(genAtomAvgs, avgPics[0].shape, 
+                genImage, _, l41 = ah.genAvgDiscrepancyImage(genAtomAvgs, avgPics[0].shape, 
                                                           analysisOpts.initLocs()) if genAvgs[0] is not None else (np.zeros(avgPics[0].shape), 0, 1)
             else:
                 genImage, l41, genAtomAvgs = ([[0]], 1, [0])
@@ -889,7 +923,7 @@ def Transfer( fileNumber, anaylsisOpts, show=True, legendOption=None, fitModules
                                                         fitModules[-1].fitCharacterErr(avgFit['vals'], avgFit['errs'])))
             disp.display(disp.Markdown(fitInfoString))
             if showFitDetails:
-                for f in getFitsDataFrame(fits, fitModules, avgFit):
+                for f in ah.getFitsDataFrame(fits, fitModules, avgFit):
                     disp.display(f)
 
         exp.annotate(fileNumber,expFile_version)
@@ -918,7 +952,7 @@ def Transfer( fileNumber, anaylsisOpts, show=True, legendOption=None, fitModules
                                                     fitModules[-1].fitCharacterErr(avgFit['vals'], avgFit['errs'])))
         disp.display(disp.Markdown(fitInfoString))
     if fitModules[-1] is not None and showFitDetails:
-            for f in getFitsDataFrame(fits, fitModules, avgFit):
+            for f in ah.getFitsDataFrame(fits, fitModules, avgFit):
                 disp.display(f)
     
     if outputThresholds:
@@ -1121,7 +1155,7 @@ def Population(fileNum, atomLocations, whichPic, picsPerRep, plotLoadingRate=Tru
     if fitModules is not [None] and showFitCharacterPlot and fits[0] != []:
         figure()
         print('fitCharacter',fitCharacters)
-        fitCharacterPic, vmin, vmax = genAvgDiscrepancyImage(fitCharacters, avgPic.shape, atomLocations)
+        fitCharacterPic, vmin, vmax = ah.genAvgDiscrepancyImage(fitCharacters, avgPic.shape, atomLocations)
         imshow(fitCharacterPic, cmap=cm.get_cmap('seismic_r'), vmin=vmin, vmax=vmax, origin='lower')
         title('Fit-Character (white is average)')
         colorbar()
@@ -1136,7 +1170,7 @@ def Population(fileNum, atomLocations, whichPic, picsPerRep, plotLoadingRate=Tru
         avgPops = []
         for l in allPops:
             avgPops.append(np.mean(l))
-        avgPopPic, vmin, vmax = genAvgDiscrepancyImage(avgPops, avgPic.shape, atomLocations)
+        avgPopPic, vmin, vmax = ah.genAvgDiscrepancyImage(avgPops, avgPic.shape, atomLocations)
         ims.append(axs[1].imshow(avgPopPic, cmap=cm.get_cmap('seismic_r'), vmin=vmin, vmax=vmax, origin='lower'))
         axs[1].set_title('Avg Population')
         
@@ -1182,7 +1216,7 @@ def Population(fileNum, atomLocations, whichPic, picsPerRep, plotLoadingRate=Tru
         for label, fitVal, err in zip(fitModules[-1].args(), avgFits['vals'], avgFits['errs']):
             print( label,':', misc.errString(fitVal, err) )
         if showFitDetails:
-            fits_df = getFitsDataFrame(fits, fitModules, avgFits, markersize=5)
+            fits_df = ah.getFitsDataFrame(fits, fitModules, avgFits, markersize=5)
             disp.display(fits_df)
     return { 'Key': key, 'All_Populations': allPops, 'All_Populations_Error': allPopsErr, 'Pixel_Counts':locCounts, 
             'Atom_Images':atomImages, 'Thresholds':thresholds, 'Atom_Data':atomData, 'Raw_Data':rawData, 

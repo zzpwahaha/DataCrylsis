@@ -6,7 +6,7 @@ import numpy as np
 import Miscellaneous as misc
 import datetime
 dataAddress = None
-currentVersion = 4
+currentVersion = 1
 
 def annotate(fileID=None, expFile_version=currentVersion, useBaseA=True):
     #hashNum = int(input("Title-Level: "))
@@ -157,10 +157,7 @@ class ExpFile:
         self.data_addr = dataAddress
         if file_id is not None:
             self.f = self.open_hdf5(fileID=file_id, useBase=useBaseA)
-            if self.version==1:
-                self.key_name, self.key = self.__get_old_key()
-            else:
-                self.key_name, self.key = self.get_key(keyParameter=keyParameter)
+            self.key_name, self.key = self.get_key(keyParameter=keyParameter)
             self.pics = self.get_pics()
             self.reps = self.get_reps()
             self.exp_start_date, self.exp_start_time, self.exp_stop_date, self.exp_stop_time = self.get_experiment_time_and_date()
@@ -195,11 +192,11 @@ class ExpFile:
     
     def get_reps(self):
         # call this one.
-        self.reps = self.f['Master-Parameters']['Repetitions'][0] if self.version<3 else self.f['Master-Runtime']['Repetitions'][0]
+        self.reps = self.f['Master-Runtime']['Repetitions'][0]
         return self.reps      
 
     def get_params(self):
-        return self.f['Master-Runtime']['Parameters'] if self.version >= 4 else (self.f['Master-Runtime']['Seq #1 Parameters'] if self.version>=3 else self.f['Master-Parameters']['Seq #1 Variables'])
+        return self.f['Master-Runtime']['Parameters'] 
     
     def get_key(self, keyParameter=None):
         """
@@ -213,16 +210,11 @@ class ExpFile:
         try:
             params = self.get_params()
             for var in params:
-                if self.version >= 4:
-                    if not params[var]['Is Constant'][0]:
-                        foundOne = True
-                        keyNames.append(''.join([char.decode('utf-8') for char in params[var]['Name']]))
-                        keyValues.append(arr(params[var]['Key Values']))
-                else:
-                    if not params[var].attrs['Constant']:
-                        foundOne = True
-                        keyNames.append(var)
-                        keyValues.append(arr(params[var]))
+                if not params[var]['Is Constant'][0]:
+                    foundOne = True
+                    keyNames.append(''.join([char.decode('utf-8') for char in params[var]['Name']]))
+                    keyValues.append(arr(params[var]['Key Values']))
+
             if foundOne:
                 if len(keyNames) > 1:
                     return keyNames, arr(misc.transpose(arr(keyValues)))
@@ -240,33 +232,16 @@ class ExpFile:
                     return "Key not found!", arr([1])
         except KeyError:
             return nokeyreturn
-    
-    def get_old_key(self):
-        """
-        :param file:
-        :return:
-        """
-        keyNames = []
-        keyValues = []
-        foundOne = False
-        for var in self.f['Master-Parameters']['Variables']:
-            if not self.f['Master-Parameters']['Variables'][var].attrs['Constant']:
-                foundOne = True
-                keyNames.append(var)
-                keyValues.append(arr(self.f['Master-Parameters']['Variables'][var]))
-        if foundOne:
-            if len(keyNames) > 1:
-                return keyNames, arr(misc.transpose(arr(keyValues)))
-            else:
-                return keyNames[0], arr(keyValues[0])
-        else:
-            return 'No-Variation', arr([1])
         
     def get_pics(self):
         p_t = arr(self.f['Andor']['Pictures'])
         pics = p_t.reshape((p_t.shape[0], p_t.shape[2], p_t.shape[1]))
         return pics
     
+    def get_mako_pics(self):
+        p_t = arr(self.f['Mako']['Pictures'])
+        pics = p_t.reshape((p_t.shape[0], p_t.shape[2], p_t.shape[1]))
+        return pics
     
     def get_basler_pics(self):
         p_t = arr(self.f['Basler']['Pictures'])
@@ -281,6 +256,14 @@ class ExpFile:
         avg_pic /= len(pics)
         return avg_pic
 
+    def get_avg_mako_pic(self):
+        pics = self.get_mako_pics()
+        avg_pic = np.zeros(pics[0].shape)
+        for p in pics:
+            avg_pic += p
+        avg_pic /= len(pics)
+        return avg_pic
+
     def get_avg_basler_pic(self):
         pics = self.get_basler_pics()
         avg_pic = np.zeros(pics[0].shape)
@@ -288,8 +271,17 @@ class ExpFile:
             avg_pic += p
         avg_pic /= len(pics)
         return avg_pic
-    
-    
+    def get_binning(self, type):
+        if type == 'andor':
+            binH = self.f['Andor']['Pictures']['Image-Dimensions']['Horizontal-Binning'][()][0]
+            binV = self.f['Andor']['Pictures']['Image-Dimensions']['Vertical-Binning'][()][0]
+        elif type == 'mako':
+            binH = self.f['Mako']['Pictures']['Image-Dimensions']['Horizontal-Binning'][()][0]
+            binV = self.f['Mako']['Pictures']['Image-Dimensions']['Vertical-Binning'][()][0]
+        else:
+            raise ValueError('Bad value for LoadType.')
+        return binH, binV 
+
     def print_all(self):
         self.__print_hdf5_obj(self.f,'')
     
@@ -345,7 +337,7 @@ class ExpFile:
         print the list of all functions which were created at the time of the experiment.
         if not brief, print the contents of every function.
         """
-        funcList = self.f['Master-Input']['Functions'] if self.version >= 3 else self.f['Master-Parameters']['Functions']
+        funcList = self.f['Master-Input']['Functions']
         for func in funcList:
             if which is not None:
                 if func != which:
@@ -366,7 +358,7 @@ class ExpFile:
 
     def print_master_script(self):
         # A shortcut
-        self.print_script(self.f['Master-Runtime']['Master-Script'])
+        self.print_script(self.f['Master-Input']['Master-Script'])
 
     def print_niawg_script(self):
         # A shortcut

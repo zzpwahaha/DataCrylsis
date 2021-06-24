@@ -18,7 +18,7 @@ import scipy.special as special
 import scipy.interpolate as interp
 import warnings
 
-from . import MatplotlibPlotters as mp
+import MatplotlibPlotters as mp
 import PhysicsConstants as mc
 import Miscellaneous as misc
 from Miscellaneous import what
@@ -661,7 +661,7 @@ def fitDoubleGaussian(binCenters, binnedData, fitGuess, quiet=False):
 
 def fitGaussianBeamWaist(data, key, wavelength):
     # expects waists as inputs
-    initial_guess = [min(data.flatten()), key[int(3*len(key)/4)]]
+    initial_guess = [min(data.flatten()), key[int(3*len(key)/4)]] 
     try:
         # fix the wavelength
         # beamWaistExpansion(z, w0, wavelength)
@@ -1729,6 +1729,8 @@ def processImageData(key, rawData, bg, window, accumulations, dataRange, zeroCor
         yMax += 0.2 * yRange
         window = pw.PictureWindow( xMin, xMax, yMin, yMax )
     if manuallyAccumulate:
+        # TODO: either remove this or keep this but change the average order since we scan all variation and then
+        # repeat the rep. -ZZP
         # ignore shape[1], which is the number of pics in each variation. These are what are getting averaged.
         avgPics = np.zeros((int(rawData.shape[0] / accumulations), rawData.shape[1], rawData.shape[2]))
         varCount = 0
@@ -1752,14 +1754,14 @@ def processImageData(key, rawData, bg, window, accumulations, dataRange, zeroCor
         rawData = rawData[dataRange[0]:dataRange[-1]]
         key = key[dataRange[0]:dataRange[-1]]
         # final normalized data
-    normData = rawData / accumulations
+    normData = rawData #/ accumulations, I don't see why the img is further divied by variation number. -ZZP
 
     # ### -Background Analysis
     # if user just entered a number, assume that it's a file number.
     if type(bg) == int and not bg == 0:
         with exp.ExpFile() as fid:
             fid.open_hdf5(bg)
-            bg = np.mean(fid.get_basler_pics(),0)
+            bg = np.mean(fid.get_mako_pics(),0)
     # window the background
     if not bg.size == 1:
         bg = np.array(window.window(bg))

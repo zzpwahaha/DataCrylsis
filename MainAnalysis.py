@@ -53,6 +53,14 @@ def standardImages( data,
             # read old data format from standalone basler programs.
             # rawData = loadCompoundBasler(data, loadType)
             print("Tried loadType==ace, but skipped in Crylsis. Just a heads up");
+        elif loadType == 'mako':
+            with exp.ExpFile(expFile_version=expFileV) as f:
+                print('Opening Mako Images.')
+                f.open_hdf5(data,True)
+                rawData = f.get_mako_pics()
+                reps = f.get_reps()
+                if key is None:
+                    _, key = f.get_key()
         elif loadType == 'basler':
             with exp.ExpFile(expFile_version=expFileV) as f:
                 print('Opening Basler Images.')
@@ -73,6 +81,8 @@ def standardImages( data,
             f.open_hdf5(data,True)
             if loadType == 'andor':
                 rawData = f.get_pics()
+            elif loadType == 'mako':
+                rawData = f.get_mako_pics()
             elif loadType == 'basler':
                 rawData = f.get_basler_pics()
             if key is None:
@@ -117,12 +127,15 @@ def standardImages( data,
             pixelSize = mc.dataRayPixelSize
         elif cameraType == 'andor':
             pixelSize = mc.andorPixelSize
+        elif cameraType == 'mako':
+            pixelSize = mc.makoPixelSize
         elif cameraType == 'ace':
             pixelSize = mc.baslerAcePixelSize
         elif cameraType == 'scout':
             pixelSize = mc.baslerScoutPixelSize
         else:
             raise ValueError("Error: Bad Value for 'cameraType'.")
+        binH, binV = f.get_binning(cameraType)
         waists *= pixelSize
         positions *= pixelSize
         # average of the two dimensions

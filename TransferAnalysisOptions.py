@@ -1,6 +1,6 @@
 import dataclasses as dc
 import typing
-from . import AnalysisHelpers as ah
+import AnalysisHelpers as ah
 
 @dc.dataclass
 class condition:

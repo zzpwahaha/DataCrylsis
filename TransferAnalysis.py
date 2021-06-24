@@ -1,12 +1,12 @@
 import numpy as np
 import copy
-from . import AnalysisHelpers as ah
-from . import ExpFile as exp
-from . import PictureWindow as pw
-from . import ThresholdOptions as to
-from . import TransferAnalysisOptions as ao
-from . import Miscellaneous as misc
-from .Miscellaneous import what
+import AnalysisHelpers as ah
+import ExpFile as exp
+import PictureWindow as pw
+import ThresholdOptions as to
+import TransferAnalysisOptions as ao
+import Miscellaneous as misc
+from Miscellaneous import what
 
 def organizeTransferData( fileNumber, analysisOpts, key=None, win=pw.PictureWindow(), dataRange=None, keyOffset=0, 
                           dimSlice=None, varyingDim=None, groupData=False, quiet=False, picsPerRep=2, repRange=None, 

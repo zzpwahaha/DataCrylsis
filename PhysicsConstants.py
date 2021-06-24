@@ -291,6 +291,7 @@ opBeamDacToVoltageConversionConstants = [8.5, -22.532, -1.9323, -0.35142]
 # pixel sizes for various cameras we have
 baslerScoutPixelSize = 7.4e-6
 baslerAcePixelSize = 4.8e-6
+makoPixelSize = 2.2e-6
 andorPixelSize = 16e-6
 dataRayPixelSize = 4.4e-6
 magnification = 64
