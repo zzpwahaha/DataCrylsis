@@ -271,15 +271,16 @@ class ExpFile:
             avg_pic += p
         avg_pic /= len(pics)
         return avg_pic
+        
     def get_binning(self, type):
         if type == 'andor':
-            binH = self.f['Andor']['Pictures']['Image-Dimensions']['Horizontal-Binning'][()][0]
-            binV = self.f['Andor']['Pictures']['Image-Dimensions']['Vertical-Binning'][()][0]
+            binH = self.f['Andor']['Image-Dimensions']['Horizontal-Binning'][()][0]
+            binV = self.f['Andor']['Image-Dimensions']['Vertical-Binning'][()][0]
         elif type == 'mako':
-            binH = self.f['Mako']['Pictures']['Image-Dimensions']['Horizontal-Binning'][()][0]
-            binV = self.f['Mako']['Pictures']['Image-Dimensions']['Vertical-Binning'][()][0]
+            binH = self.f['Mako']['Image-Dimensions']['Horizontal-Binning'][()][0]
+            binV = self.f['Mako']['Image-Dimensions']['Vertical-Binning'][()][0]
         else:
-            raise ValueError('Bad value for LoadType.')
+            raise ValueError('Bad value for CameraType.')
         return binH, binV 
 
     def print_all(self):

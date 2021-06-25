@@ -1698,6 +1698,9 @@ def processSingleImage(rawData, bg, window, xMin, xMax, yMin, yMax, accumulation
         normData -= cornerAvg
     return normData, dataMinusBg, xPts, yPts
 
+def coordMax(rawData):
+    return np.unravel_index(rawData.argmax(), rawData.shape)
+
 def processImageData(key, rawData, bg, window, accumulations, dataRange, zeroCorners,
                      smartWindow, manuallyAccumulate=False):
     """

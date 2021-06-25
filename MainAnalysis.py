@@ -1,3 +1,4 @@
+import warnings
 import numpy as np
 from numpy import array as arr
 from pandas import DataFrame
@@ -24,6 +25,20 @@ def standardImages( data,
                     # Local Data Manipulation Options
                     plottedData=None, bg=arr([0]), fitBeamWaist=False, fitPics=False,
                     cameraType='dataray', fitWidthGuess=80, quiet=False, avgFits=False, lastDataIsBackground=False, expFileV=None ):
+    """
+    :param loadType: 'andor', 'mako'
+    :param window: PictureWindow to provide easy cropping of the image
+    :param reps: Repetition number. This will be ignored and auto filled if the data is a number pointing to a hdf5 data instead of an array 
+    :param key: 
+    :param zeroCorners: If True, will subtract averaged image with the average of four values from the corner of the averaged img 
+    :param dataRange: If not None, rawAvgData = rawAvgData[dataRange[0]:dataRange[-1]]
+    :param cameraType: Used for finding the camera pixel size and maybe other infomation of that camera
+    :param expFileV: ExpFile version, with exp.ExpFile(expFile_version=expFileV) as f
+    :param fitPics: If True, will return (amplitude, xo, yo, sigma_x, sigma_y, theta, offset)
+
+    :return pictureFitParams: (amplitude, xo, yo, sigma_x, sigma_y, theta, offset)
+    :return v_params: (amplitude, xo,sigma_x, offset)
+    """
     if plottedData is None:
         plottedData = ["raw"]
     # Check for incompatible parameters.
@@ -71,8 +86,6 @@ def standardImages( data,
                     _, key = f.get_key()
         elif loadType == 'dataray':
             raise ValueError('Loadtype of "dataray" has become deprecated and needs to be reimplemented.')
-        elif loadType == 'scout':
-            raise ValueError('loadType value of "scout" has become deprecated. Use "Basler" to get the scout images from the HDF5 file.');
         else:
             raise ValueError('Bad value for LoadType.')
     elif type(data) == type('a string'):
@@ -135,7 +148,23 @@ def standardImages( data,
             pixelSize = mc.baslerScoutPixelSize
         else:
             raise ValueError("Error: Bad Value for 'cameraType'.")
-        binH, binV = f.get_binning(cameraType)
+        
+        # get binning of camera
+        if type(data) == int or (type(data) == np.array and type(data[0]) == int):
+            # a file index. 
+            with exp.ExpFile(expFile_version=expFileV) as f:
+                f.open_hdf5(data,True)
+                binH, binV = f.get_binning(cameraType)
+        elif type(data) == type('a string'):
+            # assume a file address for an HDF5 file.
+            with exp.ExpFile(expFile_version=expFileV) as f:
+                f.open_hdf5(data,False)
+                binH, binV = f.get_binning(cameraType)
+        else:
+            # data is an array probably not a serious analyzing so just assume 1
+            warnings.warn("Input data is an array, have taken the binning as 1,1 for horizontal and vertical")
+            binH, binV = (1,1) 
+
         waists *= pixelSize
         positions *= pixelSize
         # average of the two dimensions
@@ -153,6 +182,8 @@ def standardImages( data,
         pictureFitParams, pictureFitErrors = [None for _ in range(2)]
         v_params, v_errs, h_params, h_errs = [None for _ in range(4)]
         positions, waists = [None for _ in range(2)]
+    if not quiet:
+        print("Integrating rawData to obtain the sum of pixels for each image")
     intRawData = ah.integrateData(rawData)
     return key, rawData, dataMinusBg, dataMinusAvg, avgPic, pictureFitParams, pictureFitErrors, plottedData, v_params, v_errs, h_params, h_errs, intRawData
 
